@@ -275,7 +275,21 @@ static bool rasterizeTri(const float* v0, const float* v1, const float* v2,
 	rcVcopy(&in[1*3], v1);
 	rcVcopy(&in[2*3], v2);
 	int nvrow, nvIn = 3;
-	
+
+	// Clip triangles into min 
+	int np2;
+	if (tmin[0] < bmin[0])
+	{
+		dividePoly(in, nvIn, p2, &np2, p1, &nvIn, bmin[0], 0);
+		rcSwap(in, p1);
+	}
+
+	if (tmin[2] < bmin[2])
+	{
+		dividePoly(in, nvIn, p2, &np2, p1, &nvIn, bmin[2], 2);
+		rcSwap(in, p1);
+	}
+
 	for (int y = y0; y <= y1; ++y)
 	{
 		// Clip polygon to row. Store the remaining polygon as well
