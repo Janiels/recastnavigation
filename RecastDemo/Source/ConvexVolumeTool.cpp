@@ -97,10 +97,12 @@ static int pointInPoly(int nvert, const float* verts, const float* p)
 	return c;
 }
 
-rcAreaModification const SAMPLE_AREAMOD_GROUND(SAMPLE_POLYAREA_TYPE_GROUND, SAMPLE_POLYAREA_TYPE_MASK);
+// Area types that cannot be combined.
+static rcAreaModification const SAMPLE_AREAMOD_GROUND(SAMPLE_POLYAREA_TYPE_GROUND, SAMPLE_POLYAREA_TYPE_MASK);
 static rcAreaModification const SAMPLE_AREAMOD_WATER(SAMPLE_POLYAREA_TYPE_WATER, SAMPLE_POLYAREA_TYPE_MASK);
 static rcAreaModification const SAMPLE_AREAMOD_ROAD(SAMPLE_POLYAREA_TYPE_ROAD, SAMPLE_POLYAREA_TYPE_MASK);
 static rcAreaModification const SAMPLE_AREAMOD_GRASS(SAMPLE_POLYAREA_TYPE_GRASS, SAMPLE_POLYAREA_TYPE_MASK);
+// Flags that can be combined with others.
 static rcAreaModification const SAMPLE_AREAMOD_DOOR(SAMPLE_POLYAREA_FLAG_DOOR, SAMPLE_POLYAREA_FLAG_DOOR);
 static rcAreaModification const SAMPLE_AREAMOD_JUMP(SAMPLE_POLYAREA_FLAG_JUMP, SAMPLE_POLYAREA_FLAG_JUMP);
 

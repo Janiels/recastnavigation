@@ -190,14 +190,8 @@ struct MeshProcess : public dtTileCacheMeshProcess
 	}
 	
 	virtual void process(struct dtNavMeshCreateParams* params,
-						 unsigned char* polyAreas, unsigned short* polyFlags)
+						 unsigned int* /*polyAreas*/)
 	{
-		// Update poly flags from areas.
-		for (int i = 0; i < params->polyCount; ++i)
-		{
-			polyFlags[i] = sampleAreaToFlags(polyAreas[i]);
-		}
-
 		// Pass in off-mesh connections.
 		if (m_geom)
 		{
@@ -205,7 +199,6 @@ struct MeshProcess : public dtTileCacheMeshProcess
 			params->offMeshConRad = m_geom->getOffMeshConnectionRads();
 			params->offMeshConDir = m_geom->getOffMeshConnectionDirs();
 			params->offMeshConAreas = m_geom->getOffMeshConnectionAreas();
-			params->offMeshConFlags = m_geom->getOffMeshConnectionFlags();
 			params->offMeshConUserID = m_geom->getOffMeshConnectionId();
 			params->offMeshConCount = m_geom->getOffMeshConnectionCount();	
 		}
@@ -334,9 +327,12 @@ int Sample_TempObstacles::rasterizeTileLayers(
 		const int ntris = node.n;
 		
 		memset(rc.triareas, 0, ntris*sizeof(unsigned int));
-		rcMarkWalkableTriangles(m_ctx, tcfg.walkableSlopeAngle,
-								verts, nverts, tris, ntris, rc.triareas,
-								SAMPLE_AREAMOD_GROUND);
+		rcMarkWalkableTriangles(
+			m_ctx, tcfg.walkableSlopeAngle,
+			verts, nverts,
+			tris, ntris,
+			rc.triareas,
+			rcAreaModification(SAMPLE_POLYAREA_TYPE_GROUND, SAMPLE_POLYAREA_TYPE_MASK));
 		
 		if (!rcRasterizeTriangles(m_ctx, verts, nverts, tris, rc.triareas, ntris, *rc.solid, tcfg.walkableClimb))
 			return 0;
@@ -422,7 +418,7 @@ int Sample_TempObstacles::rasterizeTileLayers(
 		header.hmax = (unsigned short)layer->hmax;
 
 		dtStatus status = dtBuildTileCacheLayer(&comp, &header, layer->heights, layer->areas, layer->cons,
-												&tile->data, &tile->dataSize);
+		                                        &tile->data, &tile->dataSize);
 		if (dtStatusFailed(status))
 		{
 			return 0;

@@ -253,7 +253,7 @@ void Sample_SoloMesh::handleRender()
 			duDebugDrawNavMeshBVTree(&m_dd, *m_navMesh);
 		if (m_drawMode == DRAWMODE_NAVMESH_NODES)
 			duDebugDrawNavMeshNodes(&m_dd, *m_navQuery);
-		duDebugDrawNavMeshPolysWithFlags(&m_dd, *m_navMesh, SAMPLE_POLYFLAGS_DISABLED, duRGBA(0,0,0,128));
+		duDebugDrawNavMeshPolysWithFlags(&m_dd, *m_navMesh, SAMPLE_POLYAREA_FLAG_DISABLED, duRGBA(0,0,0,128));
 	}
 		
 	glDepthMask(GL_TRUE);
@@ -435,7 +435,8 @@ bool Sample_SoloMesh::handleBuild()
 	// If your input data is multiple meshes, you can transform them here, calculate
 	// the are type for each of the meshes and rasterize them.
 	memset(m_triareas, 0, ntris*sizeof(unsigned int));
-	rcMarkWalkableTriangles(m_ctx, m_cfg.walkableSlopeAngle, verts, nverts, tris, ntris, m_triareas, SAMPLE_AREAMOD_GROUND);
+	rcMarkWalkableTriangles(m_ctx, m_cfg.walkableSlopeAngle, verts, nverts, tris, ntris, m_triareas,
+		rcAreaModification(SAMPLE_POLYAREA_TYPE_GROUND, SAMPLE_POLYAREA_TYPE_MASK));
 	if (!rcRasterizeTriangles(m_ctx, verts, nverts, tris, m_triareas, ntris, *m_solid, m_cfg.walkableClimb))
 	{
 		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not rasterize triangles.");
@@ -636,20 +637,12 @@ bool Sample_SoloMesh::handleBuild()
 		unsigned char* navData = 0;
 		int navDataSize = 0;
 
-		// Update poly flags from areas.
-		for (int i = 0; i < m_pmesh->npolys; ++i)
-		{
-			m_pmesh->flags[i] = sampleAreaToFlags(m_pmesh->areas[i]);
-		}
-
-
 		dtNavMeshCreateParams params;
 		memset(&params, 0, sizeof(params));
 		params.verts = m_pmesh->verts;
 		params.vertCount = m_pmesh->nverts;
 		params.polys = m_pmesh->polys;
 		params.polyAreas = m_pmesh->areas;
-		params.polyFlags = m_pmesh->flags;
 		params.polyCount = m_pmesh->npolys;
 		params.nvp = m_pmesh->nvp;
 		params.detailMeshes = m_dmesh->meshes;
@@ -661,7 +654,6 @@ bool Sample_SoloMesh::handleBuild()
 		params.offMeshConRad = m_geom->getOffMeshConnectionRads();
 		params.offMeshConDir = m_geom->getOffMeshConnectionDirs();
 		params.offMeshConAreas = m_geom->getOffMeshConnectionAreas();
-		params.offMeshConFlags = m_geom->getOffMeshConnectionFlags();
 		params.offMeshConUserID = m_geom->getOffMeshConnectionId();
 		params.offMeshConCount = m_geom->getOffMeshConnectionCount();
 		params.walkableHeight = m_agentHeight;

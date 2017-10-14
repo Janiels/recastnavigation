@@ -20,6 +20,7 @@
 #define RECASTSAMPLE_H
 
 #include "Recast.h"
+#include "DetourNavMeshQuery.h"
 #include "SampleInterfaces.h"
 
 
@@ -38,40 +39,55 @@ enum SampleToolType
 	MAX_TOOLS
 };
 
-/// Mask of the ceil part of the area id (3 lower bits)
-/// the 0 value (RC_NULL_AREA) is left unused
-static const unsigned char SAMPLE_POLYAREA_TYPE_MASK = 0x07;
-/// Value for the kind of ceil "ground"
-static const unsigned char SAMPLE_POLYAREA_TYPE_GROUND = 0x1;
-/// Value for the kind of ceil "water"
-static const unsigned char SAMPLE_POLYAREA_TYPE_WATER = 0x2;
-/// Value for the kind of ceil "road"
-static const unsigned char SAMPLE_POLYAREA_TYPE_ROAD = 0x3;
-/// Value for the kind of ceil "grass"
-static const unsigned char SAMPLE_POLYAREA_TYPE_GRASS = 0x4;
-/// Flag for door area. Can be combined with area types and jump flag.
-static const unsigned char SAMPLE_POLYAREA_FLAG_DOOR = 0x08;
-/// Flag for jump area. Can be combined with area types and door flag.
-static const unsigned char SAMPLE_POLYAREA_FLAG_JUMP = 0x10;
-
-extern rcAreaModification const SAMPLE_AREAMOD_GROUND;
-
-enum SamplePolyFlags
+enum SamplePolyAreas
 {
-	SAMPLE_POLYFLAGS_WALK		= 0x01,		// Ability to walk (ground, grass, road)
-	SAMPLE_POLYFLAGS_SWIM		= 0x02,		// Ability to swim (water).
-	SAMPLE_POLYFLAGS_DOOR		= 0x04,		// Ability to move through doors.
-	SAMPLE_POLYFLAGS_JUMP		= 0x08,		// Ability to jump.
-	SAMPLE_POLYFLAGS_DISABLED	= 0x10,		// Disabled polygon
-	SAMPLE_POLYFLAGS_ALL		= 0xffff	// All abilities.
-};
+	// 32-bits are available in each polygon to mark the area.
+	// The user is free to choose how these bits are used. In the
+	// sample, 24 bits are used to specify an area type, and 8
+	// bits are used to specify additional flags. During the build
+	// process, we can set bits in polygons with rcAreaModification, see the 
+	// convex volume tool and the mesh processes.
+	// When querying the mesh, the bits can be used to modify how queries behave;
+	// see XXX (TODO).
+	SAMPLE_POLYAREA_TYPE_MASK		= 0x00ffffff,
+	SAMPLE_POLYAREA_TYPE_GROUND		= 0x01,
+	SAMPLE_POLYAREA_TYPE_WATER		= 0x02,
+	SAMPLE_POLYAREA_TYPE_ROAD		= 0x03,
+	SAMPLE_POLYAREA_TYPE_GRASS		= 0x04,
 
-unsigned short sampleAreaToFlags(unsigned char area);
+	SAMPLE_POLYAREA_FLAG_DOOR		= 0x01000000, // Door flag. Can be combined with areas.
+	SAMPLE_POLYAREA_FLAG_JUMP		= 0x02000000, // Jump flag. Can be combined with areas.
+	SAMPLE_POLYAREA_FLAG_DISABLED	= 0x04000000, // Disabled flag. Can be combined with areas.
+};
 
 class SampleDebugDraw : public DebugDrawGL
 {
 public:
 	virtual unsigned int areaToCol(unsigned int area);
+};
+
+class SampleQueryFilter : public dtQueryFilter
+{
+	unsigned int m_includeFlags;
+	unsigned int m_excludeFlags;
+public:
+	SampleQueryFilter();
+
+	bool passFilter(
+		const dtPolyRef ref,
+		const dtMeshTile* tile,
+		const dtPoly* poly) const override;
+
+	float getCost(
+		const float* pa, const float* pb,
+		const dtPolyRef prevRef, const dtMeshTile* prevTile, const dtPoly* prevPoly,
+		const dtPolyRef curRef, const dtMeshTile* curTile, const dtPoly* curPoly,
+		const dtPolyRef nextRef, const dtMeshTile* nextTile, const dtPoly* nextPoly) const override;
+
+	unsigned int getIncludeFlags() const { return m_includeFlags; }
+	void setIncludeFlags(unsigned int flags) { m_includeFlags = flags; }
+	unsigned int getExcludeFlags() const { return m_excludeFlags; }
+	void setExcludeFlags(unsigned int flags) { m_excludeFlags = flags; }
 };
 
 enum SamplePartitionType

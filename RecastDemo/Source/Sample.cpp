@@ -35,22 +35,6 @@
 #	define snprintf _snprintf
 #endif
 
-unsigned short sampleAreaToFlags(unsigned char area)
-{
-	unsigned char areaType = (area & SAMPLE_POLYAREA_TYPE_MASK);
-	unsigned short flags = (unsigned short)((areaType == SAMPLE_POLYAREA_TYPE_WATER) ? SAMPLE_POLYFLAGS_SWIM : SAMPLE_POLYFLAGS_WALK);
-	if((areaType & SAMPLE_POLYAREA_FLAG_DOOR) != 0)
-	{
-		flags |= SAMPLE_POLYFLAGS_DOOR;
-	}
-	if((areaType & SAMPLE_POLYAREA_FLAG_JUMP) != 0)
-	{
-		flags |= SAMPLE_POLYFLAGS_JUMP;
-	}
-	return flags;
-}
-
-
 unsigned int SampleDebugDraw::areaToCol(unsigned int area)
 {
 	unsigned int col;
@@ -82,6 +66,30 @@ unsigned int SampleDebugDraw::areaToCol(unsigned int area)
 	}
 
 	return col;
+}
+
+SampleQueryFilter::SampleQueryFilter()
+	: m_includeFlags(0xffffffff)
+	, m_excludeFlags(SAMPLE_POLYAREA_FLAG_DISABLED)
+{
+}
+
+
+bool SampleQueryFilter::passFilter(
+	const dtPolyRef ref,
+	const dtMeshTile* tile,
+	const dtPoly* poly) const
+{
+	return (poly->area & m_includeFlags) != 0 && (poly->area & m_excludeFlags) == 0;
+}
+
+float SampleQueryFilter::getCost(
+	const float* pa, const float* pb,
+	const dtPolyRef prevRef, const dtMeshTile* prevTile, const dtPoly* prevPoly,
+	const dtPolyRef curRef, const dtMeshTile* curTile, const dtPoly* curPoly,
+	const dtPolyRef nextRef, const dtMeshTile* nextTile, const dtPoly* nextPoly) const
+{
+	return dtQueryFilter::getCost(pa, pb, prevRef, prevTile, prevPoly, curRef, curTile, curPoly, nextRef, nextTile, nextPoly);
 }
 
 Sample::Sample() :

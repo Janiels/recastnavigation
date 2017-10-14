@@ -597,7 +597,7 @@ void Sample_TileMesh::handleRender()
 			duDebugDrawNavMeshPortals(&m_dd, *m_navMesh);
 		if (m_drawMode == DRAWMODE_NAVMESH_NODES)
 			duDebugDrawNavMeshNodes(&m_dd, *m_navQuery);
-		duDebugDrawNavMeshPolysWithFlags(&m_dd, *m_navMesh, SAMPLE_POLYFLAGS_DISABLED, duRGBA(0,0,0,128));
+		duDebugDrawNavMeshPolysWithFlags(&m_dd, *m_navMesh, SAMPLE_POLYAREA_FLAG_DISABLED, duRGBA(0,0,0,128));
 	}
 	
 	
@@ -1038,8 +1038,12 @@ unsigned char* Sample_TileMesh::buildTileMesh(const int tx, const int ty, const 
 		m_tileTriCount += nctris;
 		
 		memset(m_triareas, 0, nctris*sizeof(unsigned int));
-		rcMarkWalkableTriangles(m_ctx, m_cfg.walkableSlopeAngle,
-								verts, nverts, ctris, nctris, m_triareas, SAMPLE_AREAMOD_GROUND);
+		rcMarkWalkableTriangles(
+			m_ctx, m_cfg.walkableSlopeAngle,
+			verts, nverts,
+			ctris, nctris,
+			m_triareas,
+			rcAreaModification(SAMPLE_POLYAREA_TYPE_GROUND, SAMPLE_POLYAREA_TYPE_MASK));
 		
 		if (!rcRasterizeTriangles(m_ctx, verts, nverts, ctris, m_triareas, nctris, *m_solid, m_cfg.walkableClimb))
 			return 0;
@@ -1223,19 +1227,12 @@ unsigned char* Sample_TileMesh::buildTileMesh(const int tx, const int ty, const 
 			return 0;
 		}
 		
-		// Update poly flags from areas.
-		for (int i = 0; i < m_pmesh->npolys; ++i)
-		{
-			m_pmesh->flags[i] = sampleAreaToFlags(m_pmesh->areas[i]);
-		}
-		
 		dtNavMeshCreateParams params;
 		memset(&params, 0, sizeof(params));
 		params.verts = m_pmesh->verts;
 		params.vertCount = m_pmesh->nverts;
 		params.polys = m_pmesh->polys;
 		params.polyAreas = m_pmesh->areas;
-		params.polyFlags = m_pmesh->flags;
 		params.polyCount = m_pmesh->npolys;
 		params.nvp = m_pmesh->nvp;
 		params.detailMeshes = m_dmesh->meshes;
@@ -1247,7 +1244,6 @@ unsigned char* Sample_TileMesh::buildTileMesh(const int tx, const int ty, const 
 		params.offMeshConRad = m_geom->getOffMeshConnectionRads();
 		params.offMeshConDir = m_geom->getOffMeshConnectionDirs();
 		params.offMeshConAreas = m_geom->getOffMeshConnectionAreas();
-		params.offMeshConFlags = m_geom->getOffMeshConnectionFlags();
 		params.offMeshConUserID = m_geom->getOffMeshConnectionId();
 		params.offMeshConCount = m_geom->getOffMeshConnectionCount();
 		params.walkableHeight = m_agentHeight;
